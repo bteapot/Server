@@ -1,4 +1,4 @@
-# ``Server``
+# Server
 
 Lightweight ReactiveSwift dynamically configurable network layer.
 
@@ -40,3 +40,7 @@ Server.back
         // process updated user card
     }
 ```
+
+## Documentation
+
+Complete Xcode documentation included with code and its archived version attached to GitHub release page.
