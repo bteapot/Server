@@ -28,7 +28,7 @@ Server.back
             "id": userID,
         ],
         send: .multipart([
-            .png(avatarImage, name: "avatar.png", filename: "avatar.png"),
+            .png(avatarImage, name: "avatar", filename: "avatar.png"),
             .text(firstName, name: "first_name"),
             .text(lastName, name: "last_name"),
         ]),
