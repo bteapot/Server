@@ -43,4 +43,6 @@ Server.back
 
 ## Documentation
 
-Complete Xcode documentation included with code and its archived version attached to GitHub release page.
+Complete Xcode documentation is included with code and its archived version attached to GitHub release page.
+
+Documentation is also available [online](https://bteapot.github.io/Server/documentation/server/).
