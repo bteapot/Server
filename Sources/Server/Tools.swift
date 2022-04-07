@@ -336,7 +336,7 @@ private extension Server.Tools {
             NSLog("server error decoding [\(response.url?.absoluteString ?? "")]: \(error.localizedDescription)\n\n\(String(data: data, encoding: .utf8) ?? "nil")")
         }
         
-        if let folder = config.reports {
+        if let folder = config.reports.url {
             var filename = String(Date().timeIntervalSince1970)
             
             if let urlString = request.url?.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) {

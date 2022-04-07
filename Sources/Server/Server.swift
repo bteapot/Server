@@ -89,6 +89,26 @@ open class Server {
     ) -> SignalProducer<R, Error> {
         let (config, session) = self.assets.value
         
+        #if DEBUG
+        let logging: Bool = config.reports.logging
+        var start:   Date = .distantFuture
+        
+        let log = { (phase: String, message: String) in
+            guard logging else {
+                return
+            }
+            
+            NSLog(
+                "[server] %@ %@ %6.3f %@ %@",
+                phase.padding(toLength: 6, withPad: " ", startingAt: 0),
+                Date().timeIntervalSince(start) > 3 ? "•" : " ",
+                Date().timeIntervalSince(start),
+                path,
+                message
+            )
+        }
+        #endif
+        
         return Tools.assemble(
             config:  config,
             type:    type,
@@ -131,5 +151,23 @@ open class Server {
             )
         }
         .take(until: self.assets.signal.map(value: ()))
+        
+        #if DEBUG
+        .on(
+            started: {
+                start = Date()
+                log("start", "")
+            },
+            failed: { error in
+                log("error", error.localizedDescription)
+            },
+            interrupted: {
+                log("cancel", "")
+            },
+            value: { value in
+                log("done", "")
+            }
+        )
+        #endif
     }
 }

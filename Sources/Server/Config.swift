@@ -27,7 +27,7 @@ extension Server {
         ///   - encoder: Optional closure for `JSONEncoder` configuration.
         ///   - decoder: Optional closure for `JSONDecoder` configuration.
         ///   - catcher: Optional closure for mapping or canceling errors.
-        ///   - reports: Optional local file system folder `URL` for response data dumps on decoding failures. Used only with DEBUG builds. Specify something like `URL(fileURLWithPath: "/Users/<your username>/Downloads")`.
+        ///   - reports: Reports mode. Defaults to `none`. Other options are available only in `DEBUG` builds.
         public init(
             timeout:  TimeInterval = 60,
             base:      URL,
@@ -40,7 +40,7 @@ extension Server {
             encoder:   Configure<JSONEncoder>? = nil,
             decoder:   Configure<JSONDecoder>? = nil,
             catcher:   Catcher? = nil,
-            reports:   URL? = nil
+            reports:   Reports = .none
         ) {
             // common request parameters
             self.timeout = timeout
@@ -79,8 +79,8 @@ extension Server {
             
             // dump response data into this local folder when decoding error occurs
             #if DEBUG
-            if let reports = reports {
-                assert(reports.isFileURL)
+            if let url = reports.url {
+                assert(url.isFileURL)
             }
             self.reports = reports
             #endif
@@ -134,7 +134,45 @@ extension Server {
         public let catcher:   Catcher?
         
         #if DEBUG
-        public let reports:  URL?
+        public let reports:   Reports
         #endif
     }
 }
+
+extension Server.Config {
+    /// Reports mode.
+    ///
+    /// - **`none`**: No reporting.
+    /// - **`logs`**: Will be logged request events such as starting, finishing, errors and execution duration. Used only with `DEBUG` builds.
+    /// - **`dumps`**: Same as `logs` plus decoding failures data dumps. Takes local file system folder `URL` for response data dumps on decoding failures. Used only with `DEBUG` builds. Specify something like `URL(fileURLWithPath: "/Users/<your username>/Downloads")`. Will also turn on request execution logs when present.
+    /// - **`full`**: Same as `logs` plus `dumps`.
+    public enum Reports {
+        case none
+        
+        #if DEBUG
+        case logs
+        case dumps(URL)
+        case full(URL)
+        #endif
+    }
+}
+
+#if DEBUG
+extension Server.Config.Reports {
+    var logging: Bool {
+        switch self {
+            case .logs: return true
+            case .full: return true
+            default:    return false
+        }
+    }
+    
+    var url: URL? {
+        switch self {
+            case .dumps(let url): return url
+            case .full(let url):  return url
+            default:              return nil
+        }
+    }
+}
+#endif
