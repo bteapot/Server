@@ -223,7 +223,7 @@ private extension Server.Config.ResponseHandler {
                     {
                         #if DEBUG
                         NSLog(String(
-                            format: "server error %d: [%@],\nrequest: %@\ndata: %@\nresponse: %@\ndata: %@",
+                            format: "server error %d: [%@],\nrequest: %@\nresponse: %@\ndata: %@",
                             response.statusCode,
                             HTTPURLResponse.localizedString(forStatusCode: response.statusCode),
                             String(describing: request),
