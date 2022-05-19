@@ -62,6 +62,8 @@ open class Server {
             .take(until: self.assets.signal.map(value: ()))
     }
     
+    public typealias Catcher<R> = (Error) throws -> R
+    
     /// Perfom network request.
     ///
     /// - Parameters:
@@ -85,7 +87,7 @@ open class Server {
         query:   [String: String] = [:],
         send:    Send = .void(),
         take:    Take<R>,
-        catch:   Config.Catcher? = nil
+        catcher: Catcher<R>? = nil
     ) -> SignalProducer<R, Error> {
         let (config, session) = self.assets.value
         
@@ -145,9 +147,9 @@ open class Server {
         }
         .flatMapError { error in
             Tools.mapError(
-                config: config,
-                catch:  `catch`,
-                error:  error
+                config:  config,
+                catcher: catcher,
+                error:   error
             )
         }
         .take(until: self.assets.signal.map(value: ()))

@@ -179,31 +179,35 @@ extension Server {
         // MARK: - Map or skip errors
         
         public static func mapError<R>(
-            config: Config,
-            catch:  Config.Catcher?,
-            error:  Error
+            config:  Config,
+            catcher: Catcher<R>?,
+            error:   Error
         ) -> SignalProducer<R, Error> {
-            SignalProducer { observer, lifetime in
-                // error mapping defined by request or config?
-                if let catcher = `catch` ?? config.catcher {
-                    // map error or terminate signal
-                    if let mapped = catcher(error) {
-                        observer.send(error: mapped)
-                    } else {
-                        observer.sendCompleted()
-                    }
+            // error handling defined by request?
+            if let catcher = catcher {
+                // map error or send value and terminate
+                return .init { try catcher(error) }
+            }
+            
+            // error mapping defined by config?
+            if let catcher = config.catcher {
+                // map error or terminate signal
+                if let mapped = catcher(error) {
+                    return .init(error: mapped)
                 } else {
-                    // standard error handling
-                    switch error {
-                        case URLError.cancelled:
-                            // request cancelled, will complete without values or errors
-                            observer.sendCompleted()
-                            
-                        default:
-                            // send error
-                            observer.send(error: error)
-                    }
+                    return .empty
                 }
+            }
+            
+            // standard error handling
+            switch error {
+                case URLError.cancelled:
+                    // request cancelled, will complete without values or errors
+                    return .empty
+
+                default:
+                    // send original error
+                    return .init(error: error)
             }
         }
     }
