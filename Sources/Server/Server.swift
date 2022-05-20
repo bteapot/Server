@@ -62,20 +62,24 @@ open class Server {
             .take(until: self.assets.signal.map(value: ()))
     }
     
+    /// Request-level error mapping.
+    ///
+    /// Overrides config's ``Config/catcher-swift.property`` when non-`nil`
+    /// This closure can return substitute value as request's result, rethrow received error or throw replacement error.
     public typealias Catcher<R> = (Error) throws -> R
     
     /// Perfom network request.
     ///
     /// - Parameters:
     ///   - type:    HTTP RESTful method.
-    ///   - base:    Override ``Config/base`` URL when non-`nil`.
+    ///   - base:    Override config's ``Config/base`` URL when non-`nil`.
     ///   - path:    Request path.
-    ///   - timeout: Override ``Config/timeout`` value when non-`nil`.
+    ///   - timeout: Override config's ``Config/timeout`` value when non-`nil`.
     ///   - headers: Request headers. Defaults to empty.
     ///   - query:   Rquest query. Defaults to empty.
     ///   - send:    Request's outgoing data handler. Defaults to ``Send/void()``.
     ///   - take:    Expected response data handler. Defaults to ``Take/void()``.
-    ///   - catch:   Override ``Config/catcher-swift.property`` when non-`nil`.
+    ///   - catcher: Overrides config's ``Config/catcher-swift.property`` when non-`nil`.
     ///
     /// - Returns: `SignalProducer` for request processing.
     open func request<R>(
