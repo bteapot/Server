@@ -34,7 +34,7 @@ More common usage scenarios takes into account application user's identity chang
 
 ## Making requests
 
-Call ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catch:)`` to get a `SignalProducer` that will:
+Call ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)`` to get a `SignalProducer` that will:
 
 1. Assemble an `URLRequest` from current configuration and specified method parameters.
 2. Start that request with underlying `URLSession`.
@@ -69,7 +69,7 @@ Server.back
 
 ### Requests
 
-- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catch:)``
+- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``
 - ``Method``
 - ``Send``
 - ``Take``
