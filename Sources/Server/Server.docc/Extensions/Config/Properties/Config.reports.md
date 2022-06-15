@@ -1,4 +1,4 @@
-# ``Server/Server/Config/reports``
+# ``Server/Server/Config-swift.struct/reports``
 
 Optional local file system `URL` for response data dumps on decoding failures.
 

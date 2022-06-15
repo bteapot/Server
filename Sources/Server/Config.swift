@@ -20,20 +20,20 @@ extension Server {
         ///   - base: Default base `URL` for all requests.
         ///   - headers: Base key-value pairs for [allHTTPHeaderFields](https://developer.apple.com/documentation/foundation/urlrequest/2011502-allhttpheaderfields) of all requests.
         ///   - query: Base key-value pairs for [queryItems](https://developer.apple.com/documentation/foundation/urlcomponents/1779966-queryitems) of all requests.
-        ///   - session: `URLSessionConfiguration` provider.
+        ///   - config: `URLSessionConfiguration` for new session.
         ///   - challenge: Handling of `URLSessionDelegate`'s authentication challenges (see [here](https://developer.apple.com/documentation/foundation/urlsessiondelegate/1409308-urlsession)).
         ///   - request: Optional closure for fine-tuning any `URLRequest`.
         ///   - response: Response handling (see ``Server/Server/Tools/check(config:take:request:response:data:)``).
         ///   - encoder: Optional closure for `JSONEncoder` configuration.
         ///   - decoder: Optional closure for `JSONDecoder` configuration.
         ///   - catcher: Optional closure for mapping or canceling errors.
-        ///   - reports: Reports mode. Defaults to `none`. Other options are available only in `DEBUG` builds.
+        ///   - reports: Reports mode. Defaults to `none`. Works only for `DEBUG` builds.
         public init(
             timeout:  TimeInterval = 60,
             base:      URL,
             headers:   [String: String] = [:],
             query:     [String: String] = [:],
-            session:   SessionConfiguration = .ephemeral,
+            config:    URLSessionConfiguration = .ephemeral,
             challenge: ChallengeHandler = .standard,
             request:   Configure<URLRequest>? = nil,
             response:  ResponseHandler = .standard(),
@@ -47,12 +47,6 @@ extension Server {
             self.base    = base
             self.headers = headers
             self.query   = query
-            
-            // session configuration
-            self.session = session
-            
-            // authentication challenge response
-            self.challenge = challenge
             
             // request configuration
             self.request = request
@@ -77,6 +71,14 @@ extension Server {
             // error catcher
             self.catcher = catcher
             
+            // session
+            self.session = 
+                URLSession(
+                    configuration: config,
+                    delegate:      Delegate(with: challenge),
+                    delegateQueue: nil
+                )
+            
             // dump response data into this local folder when decoding error occurs
             #if DEBUG
             if let url = reports.url {
@@ -89,20 +91,6 @@ extension Server {
         // MARK: - Types
         
         public typealias Configure<T> = (inout T) -> Void
-        
-        public enum SessionConfiguration {
-            case `default`
-            case ephemeral
-            case custom(() -> URLSessionConfiguration)
-            
-            var configuration: URLSessionConfiguration {
-                switch self {
-                    case .default:              return .default
-                    case .ephemeral:            return .ephemeral
-                    case .custom(let provider): return provider()
-                }
-            }
-        }
         
         public enum ChallengeHandler {
             case standard
@@ -125,13 +113,13 @@ extension Server {
         public let base:      URL
         public let headers:   [String: String]
         public let query:     [String: String]
-        public let session:   SessionConfiguration
-        public let challenge: ChallengeHandler
         public let request:   Configure<URLRequest>?
         public let response:  ResponseHandler
         public let encoder:   JSONEncoder
         public let decoder:   JSONDecoder
         public let catcher:   Catcher?
+        
+        public let session:   URLSession
         
         #if DEBUG
         public let reports:   Reports
@@ -148,12 +136,9 @@ extension Server.Config {
     /// - **`full`**: Same as `logs` plus `dumps`.
     public enum Reports {
         case none
-        
-        #if DEBUG
         case logs
         case dumps(URL)
         case full(URL)
-        #endif
     }
 }
 

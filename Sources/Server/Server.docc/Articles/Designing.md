@@ -101,7 +101,7 @@ Backend representation would react to changes in `AppUser`'s `identity` property
 
 1. Cancel ongoing requests belonging to previous user identity.
 2. Invalidate it's underlying `URLSession`.
-2. Construct a new ``Server/Server/Config`` containing appropriate parameters for conducting a future requests.
+2. Construct a new ``Server/Server/Config-swift.struct`` containing appropriate parameters for conducting a future requests.
 
 ```swift
 extension Server {

@@ -1,4 +1,4 @@
-# ``Server/Server/Config/base``
+# ``Server/Server/Config-swift.struct/base``
 
 Base `URL` for all requests.
 

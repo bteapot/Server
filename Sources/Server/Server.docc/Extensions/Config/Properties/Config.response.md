@@ -1,4 +1,4 @@
-# ``Server/Server/Config/response``
+# ``Server/Server/Config-swift.struct/response``
 
 Response check.
 

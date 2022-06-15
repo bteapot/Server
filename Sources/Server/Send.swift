@@ -39,7 +39,7 @@ extension Server {
         
         /// JSON request data.
         ///
-        /// This option encodes provided value using config's ``Server/Server/Config/encoder`` and adds `"Content-Type"` header with `"application/json"` value.
+        /// This option encodes provided value using config's ``Server/Server/Config-swift.struct/encoder`` and adds `"Content-Type"` header with `"application/json"` value.
         ///
         /// - Parameters:
         ///   - encodable: Value conforming to `Encodable` protocol.
@@ -142,14 +142,14 @@ extension Server {
         /// Custom provider for request data.
         ///
         /// - Parameters:
-        ///   - encode: Closure that takes current ``Server/Server/Config`` and returns request's body and headers.
+        ///   - encode: Closure that takes current ``Server/Server/Config-swift.struct`` and returns request's body and headers.
         public static func custom(_ encode: @escaping Encode) -> Send {
             .init(encode)
         }
         
         // MARK: - Types
         
-        /// Closure that takes current ``Server/Server/Config`` and returns request's body and headers.
+        /// Closure that takes current ``Server/Server/Config-swift.struct`` and returns request's body and headers.
         public typealias Encode = (Config) throws -> (body: Data?, headers: [String: String]?)
         
         // MARK: - Properties

@@ -1,4 +1,4 @@
-# ``Server/Server/Config/ChallengeHandler``
+# ``Server/Server/Config-swift.struct/ChallengeHandler``
 
 `URLSession`'s authentication challenge handling type.
 

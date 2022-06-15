@@ -1,4 +1,4 @@
-# ``Server/Server/Config/ChallengeHandler/standard``
+# ``Server/Server/Config-swift.struct/ChallengeHandler/standard``
 
 Standard authentication challenge response.
 

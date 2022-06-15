@@ -1,4 +1,4 @@
-# ``Server/Server/Config/query``
+# ``Server/Server/Config-swift.struct/query``
 
 Session-wide request query.
 

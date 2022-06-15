@@ -1,4 +1,4 @@
-# ``Server/Server/Config``
+# ``Server/Server/Config-swift.struct``
 
 Configuration parameters container for `Server` instances.
 

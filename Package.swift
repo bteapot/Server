@@ -6,7 +6,7 @@ let package = Package(
     name: "Server",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v13),
+        .iOS(.v12),
         .macOS(.v10_14),
         .tvOS(.v12),
         .watchOS(.v5),

@@ -1,4 +1,4 @@
-# ``Server/Server/Config/Catcher-swift.typealias``
+# ``Server/Server/Config-swift.struct/Catcher-swift.typealias``
 
 Request's error mapping or canceling.
 

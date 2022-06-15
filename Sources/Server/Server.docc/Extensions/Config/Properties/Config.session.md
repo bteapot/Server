@@ -1,3 +1,3 @@
-# ``Server/Server/Config/session``
+# ``Server/Server/Config-swift.struct/session``
 
-`URLSessionConfiguration` provider.
+`URLSession` that was created automatically for specified configuration parameters.

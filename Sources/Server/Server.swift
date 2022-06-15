@@ -18,23 +18,14 @@ open class Server {
     
     /// Creates and returns a `Server` instance.
     ///
-    /// - Parameter configurator: Reactive property with ``Config`` values.
+    /// - Parameter configurator: Reactive property with ``Config-swift.struct`` values.
     public init<P: PropertyProtocol>(_ configurator: P) where P.Value == Config {
         // set configuration and observe its changes
-        self.assets =
-            Property(capturing: configurator.map { config in
-                Assets(
-                    config: config,
-                    session: URLSession(
-                        configuration: config.session.configuration,
-                        delegate:      Delegate(with: config),
-                        delegateQueue: nil
-                    )
-                )
-            })
+        self.config =
+            Property(capturing: configurator)
         
         // discard old session
-        self.assets
+        self.config
             .producer
             .combinePrevious()
             .map { old, new in old.session }
@@ -43,12 +34,10 @@ open class Server {
             }
     }
     
-    // MARK: - Assets
+    // MARK: - Config
     
-    public typealias Assets = (config: Config, session: URLSession)
-    
-    /// Reactive prtoperty which value contains current ``Config`` and `URLSession`.
-    public let assets: Property<Assets>
+    /// Reactive prtoperty which value contains current ``Config-swift.struct``.
+    public let config: Property<Config>
     
     // MARK: - Requests
     
@@ -57,14 +46,14 @@ open class Server {
     /// - Parameter request: Custom `URLRequest`.
     /// - Returns: `SignalProducer` for request execution.
     open func raw(with request: URLRequest) -> SignalProducer<(Data, URLResponse), Error> {
-        self.assets.value.session.reactive
+        self.config.value.session.reactive
             .data(with: request)
-            .take(until: self.assets.signal.map(value: ()))
+            .take(until: self.config.signal.map(value: ()))
     }
     
     /// Request-level error mapping.
     ///
-    /// Overrides config's ``Config/catcher-swift.property`` when non-`nil`
+    /// Overrides config's ``Config-swift.struct/catcher-swift.property`` when non-`nil`
     /// This closure can return substitute value as request's result, rethrow received error or throw replacement error.
     public typealias Catcher<R> = (Error) throws -> R
     
@@ -72,14 +61,14 @@ open class Server {
     ///
     /// - Parameters:
     ///   - type:    HTTP RESTful method.
-    ///   - base:    Override config's ``Config/base`` URL when non-`nil`.
+    ///   - base:    Override config's ``Config-swift.struct/base`` URL when non-`nil`.
     ///   - path:    Request path.
-    ///   - timeout: Override config's ``Config/timeout`` value when non-`nil`.
+    ///   - timeout: Override config's ``Config-swift.struct/timeout`` value when non-`nil`.
     ///   - headers: Request headers. Defaults to empty.
     ///   - query:   Rquest query. Defaults to empty.
     ///   - send:    Request's outgoing data handler. Defaults to ``Send/void()``.
     ///   - take:    Expected response data handler. Defaults to ``Take/void()``.
-    ///   - catcher: Overrides config's ``Config/catcher-swift.property`` when non-`nil`.
+    ///   - catcher: Overrides config's ``Config-swift.struct/catcher-swift.property`` when non-`nil`.
     ///
     /// - Returns: `SignalProducer` for request processing.
     open func request<R>(
@@ -93,7 +82,7 @@ open class Server {
         take:    Take<R>,
         catcher: Catcher<R>? = nil
     ) -> SignalProducer<R, Error> {
-        let (config, session) = self.assets.value
+        let config = self.config.value
         
         #if DEBUG
         let logging: Bool = config.reports.logging
@@ -127,7 +116,7 @@ open class Server {
             take:    take
         )
         .flatMap(.concat) { request in
-            session.reactive
+            config.session.reactive
                 .data(with: request)
                 .map { (request, $0.1, $0.0) }
         }
@@ -156,7 +145,7 @@ open class Server {
                 error:   error
             )
         }
-        .take(until: self.assets.signal.map(value: ()))
+        .take(until: self.config.signal.map(value: ()))
         
         #if DEBUG
         .on(

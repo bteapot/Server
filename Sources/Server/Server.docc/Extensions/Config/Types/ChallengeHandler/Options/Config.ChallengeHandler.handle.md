@@ -1,4 +1,4 @@
-# ``Server/Server/Config/ChallengeHandler/handle(_:)``
+# ``Server/Server/Config-swift.struct/ChallengeHandler/handle(_:)``
 
 Custom authentication challenge response.
 

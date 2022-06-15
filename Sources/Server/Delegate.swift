@@ -13,14 +13,14 @@ extension Server {
         
         // MARK: - Initialization
         
-        required init(with config: Config) {
-            self.config = config
+        required init(with handler: Config.ChallengeHandler) {
+            self.handler = handler
             super.init()
         }
         
         // MARK: - Properties
         
-        private let config: Config
+        private let handler: Config.ChallengeHandler
         
         // MARK: - Session level
         
@@ -41,7 +41,7 @@ extension Server {
             challenge: URLAuthenticationChallenge,
             completion: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
         ) {
-            switch self.config.challenge {
+            switch self.handler {
                 case .standard:
                     completion(.performDefaultHandling, nil)
                     

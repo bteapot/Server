@@ -55,7 +55,7 @@ extension Server {
         ///
         /// - Parameters:
         ///   - mimeType: Optional value for `"Accept"` request header.
-        ///   - check:    Optional response check. Overrides, if present, the one defined in config's ``Server/Server/Config/response``.
+        ///   - check:    Optional response check. Overrides, if present, the one defined in config's ``Server/Server/Config-swift.struct/response``.
         ///   - decode:   Closure that will decode received data.
         public static func custom<T>(mimeType: String?, check: Config.ResponseHandler.Check? = nil, decode: @escaping Decode<T>) -> Take<T> {
             .init(
@@ -83,7 +83,7 @@ extension Server {
         
         // MARK: - Types
         
-        /// Closure that takes current ``Server/Server/Config``, received `Data` and `URLResponse`, and returns decoded data.
+        /// Closure that takes current ``Server/Server/Config-swift.struct``, received `Data` and `URLResponse`, and returns decoded data.
         public typealias Decode<T> = (Config, Data, URLResponse) throws -> T
         
         // MARK: - Properties

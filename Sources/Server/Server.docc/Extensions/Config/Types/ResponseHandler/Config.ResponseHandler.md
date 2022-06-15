@@ -1,4 +1,4 @@
-# ``Server/Server/Config/ResponseHandler``
+# ``Server/Server/Config-swift.struct/ResponseHandler``
 
 Response check type.
 

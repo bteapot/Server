@@ -1,4 +1,4 @@
-# ``Server/Server/Config/headers``
+# ``Server/Server/Config-swift.struct/headers``
 
 Session-wide request headers.
 

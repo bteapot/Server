@@ -1,4 +1,4 @@
-# ``Server/Server/Config/timeout``
+# ``Server/Server/Config-swift.struct/timeout``
 
 Default time out interval for all requests.
 

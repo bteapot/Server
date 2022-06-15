@@ -1,4 +1,4 @@
-# ``Server/Server/Config/ResponseHandler/standard(_:)``
+# ``Server/Server/Config-swift.struct/ResponseHandler/standard(_:)``
 
 Standard response check.
 

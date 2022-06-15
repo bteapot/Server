@@ -12,7 +12,7 @@ An object that represents specific backend service.
 
 ## Creating a Server object
 
-`Server`'s initialization takes one parameter: reactive property with ``Config`` values. Each value of this property will be used to configure a new `URLSession` and all further requests it processes. Subsequent changes to the value of this property will cancel all ongoing requests and invalidate current `URLSession`. 
+`Server`'s initialization takes one parameter: reactive property with ``Config-swift.struct`` values. Each value of this property will be used to configure a new `URLSession` and all further requests it processes. Subsequent changes to the value of this property will cancel all ongoing requests and invalidate current `URLSession`. 
 
 For simple cases this property can be immutable, resulting in a single `Server`'s lifecycle:
 
@@ -63,9 +63,14 @@ Server.back
 
 ## Topics
 
-### Initializing
+### Initialization
 
 - ``init(_:)``
+
+### Configuration
+
+- ``config-swift.property``
+- ``Config-swift.struct``
 
 ### Requests
 
@@ -77,8 +82,3 @@ Server.back
 ### Raw requests
 
 - ``raw(with:)``
-
-### Assets
-
-- ``assets-swift.property``
-- ``Assets-swift.typealias``

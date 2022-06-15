@@ -1,4 +1,4 @@
-# ``Server/Server/Config/catcher-swift.property``
+# ``Server/Server/Config-swift.struct/catcher-swift.property``
 
 Optional closure for mapping or canceling errors.
 

@@ -51,7 +51,7 @@ Server.back
 ### Configuring server
 
 - ``Server/Server``
-- ``Server/Server/Config``
+- ``Server/Server/Config-swift.struct``
 
 ### Making requests
 

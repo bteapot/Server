@@ -1,4 +1,4 @@
-# ``Server/Server/Config/decoder``
+# ``Server/Server/Config-swift.struct/decoder``
 
 Configured `JSONDecoder` instance for parsing ``Server/Server/Take/json(_:)`` responses.
 
