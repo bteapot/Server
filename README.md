@@ -45,4 +45,4 @@ Server.back
 
 Complete Xcode documentation is included with code and its archived version attached to GitHub release page.
 
-Documentation is also available [online](https://bteapot.github.io/Server/documentation/server/).
+Documentation is also available [online](https://swiftpackageindex.com/bteapot/Server/master/documentation/server).
