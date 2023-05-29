@@ -9,12 +9,11 @@ This small library provides solution for most modern Swift application's network
 Making a request would be as simple as:
 
 ```swift
-Server.back
+try await Server.back
     .request(
         type: .post,
         path: "/ping"
     )
-    .start()
 ```
 
 Or as complex as:
