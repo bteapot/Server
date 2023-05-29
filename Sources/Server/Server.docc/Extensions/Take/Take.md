@@ -4,7 +4,7 @@ Processing of expected response data.
 
 ## Overview
 
-This structure defines value type of `SignalProducer` returned by ``request(type:base:path:timeout:headers:query:send:take:catcher:)``.
+This structure defines value type returned by ``request(type:base:path:timeout:headers:query:send:take:catch:)``.
 
 When `URLRequest` is created, this structure may provide appropriate value for `"Accept"` header.
 

@@ -1,12 +1,11 @@
 //
 //  Config.swift
-//
+//  Server
 //
 //  Created by Денис Либит on 11.02.2022.
 //
 
 import Foundation
-import ReactiveSwift
 
 
 extension Server {
@@ -102,7 +101,7 @@ extension Server {
             case handle(Check)
             
             public typealias Describe = (Config, URLRequest, HTTPURLResponse, Data) -> String
-            public typealias Check    = (Config, URLRequest, URLResponse, Data) throws -> Void
+            public typealias Check    = (Config, URLRequest, URLResponse, Data) async throws -> Void
         }
         
         public typealias Catcher = (Error) -> Error?

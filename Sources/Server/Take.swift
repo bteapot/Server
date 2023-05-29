@@ -1,6 +1,6 @@
 //
 //  Take.swift
-//
+//  Server
 //
 //  Created by Денис Либит on 11.02.2022.
 //
@@ -15,7 +15,7 @@ extension Server {
         
         /// Expect no data.
         ///
-        /// Sets `SignalProducer`'s value type to `Void`. Any received data will be ignored.
+        /// Sets return value type to `Void`. Any received data will be ignored.
         public static func void() -> Take<Void> {
             .init(
                 mimeType: "*/*",
@@ -25,7 +25,7 @@ extension Server {
         
         /// Expect raw data.
         ///
-        /// Sets `SignalProducer`'s value type to `Data`. Received data will be passed as is.
+        /// Sets return value type to `Data`. Received data will be passed as is.
         ///
         /// - Parameters:
         ///   - mimeType: Value for request's `"Accept"` header. Defaults to `"*/*"`.
@@ -38,7 +38,7 @@ extension Server {
         
         /// Expect JSON.
         ///
-        /// Sets `SignalProducer`'s value type to specified type. Request's `"Accept"` header will be set to `"application/json"` value.
+        /// Sets return value type to specified type. Request's `"Accept"` header will be set to `"application/json"` value.
         ///
         /// - Parameters:
         ///   - type: Expected `Decodable` type.
@@ -51,7 +51,7 @@ extension Server {
         
         /// Custom response processing.
         ///
-        /// Sets `SignalProducer`'s value type to the return type of `decode` closure.
+        /// Sets return value type to the return type of `decode` closure.
         ///
         /// - Parameters:
         ///   - mimeType: Optional value for `"Accept"` request header.
@@ -76,7 +76,7 @@ extension Server {
                 mimeType: take.mimeType,
                 check: { _, _, _, _ in },
                 decode: { config, data, response in
-                    (response, try take.decode(config, data, response))
+                    await (response, try take.decode(config, data, response))
                 }
             )
         }
@@ -84,7 +84,7 @@ extension Server {
         // MARK: - Types
         
         /// Closure that takes current ``Server/Server/Config-swift.struct``, received `Data` and `URLResponse`, and returns decoded data.
-        public typealias Decode<T> = (Config, Data, URLResponse) throws -> T
+        public typealias Decode<T> = (Config, Data, URLResponse) async throws -> T
         
         // MARK: - Properties
         

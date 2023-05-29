@@ -1,6 +1,6 @@
 //
 //  Send.swift
-//
+//  Server
 //
 //  Created by Денис Либит on 11.02.2022.
 //
@@ -150,7 +150,7 @@ extension Server {
         // MARK: - Types
         
         /// Closure that takes current ``Server/Server/Config-swift.struct`` and returns request's body and headers.
-        public typealias Encode = (Config) throws -> (body: Data?, headers: [String: String]?)
+        public typealias Encode = (Config) async throws -> (body: Data?, headers: [String: String]?)
         
         // MARK: - Properties
         

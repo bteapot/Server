@@ -16,14 +16,14 @@ The user's authorization state can be expressed by two enumeration cases:
 
 ```swift
 extension AppUser {
-    enum Identity {
+    enum Identity: Equatable {
         case unauthorized
         case authorized(Info)
     }
 }
 
 extension AppUser.Identity {
-    struct Info: Codable {
+    struct Info: Codable, Equatable {
         let username: String
         let token: String
     }
@@ -33,54 +33,51 @@ extension AppUser.Identity {
 Application's authorization handling in that case may be incapsulated in the following container that essentially holds current user authorization state and provides means to change it:
 
 ```swift
-import Foundation
-import ReactiveSwift
+import SwiftUI
 import Server
 
-final class AppUser {
+final class AppUser: ObservableObject {
+    
     static let shared = AppUser()
     
-    lazy var identity =
-        Property<Identity>(
-            initial: .unauthorized,
-            then: self.pipe.output.observe(on: QueueScheduler.main)
-        )
+    @MainActor
+    @Published
+    var identity: Identity = .unauthorized
     
-    lazy var authorize =
-        Action<Credentials, Void, Error> { [input = self.pipe.input] credentials in
-            Server.back
+    @MainActor
+    func set(identity: Identity) {
+        self.identity = identity
+    }
+    
+    func authorize(with credentials: Credentials) async throws {
+        let response =
+            try await Server.back
                 .request(
                     type: .post,
                     path: "/authorize",
                     send: .json(credentials),
                     take: .json(AuthorizationResponse.self)
                 )
-                .map { response in
-                    input.send(value: .authorized(
-                        .init(
-                            username: credentials.username,
-                            token: response.token
-                        )
-                    ))
-                }
-        }
+        
+        await self.set(identity: .authorized(
+            .init(
+                username: credentials.username,
+                token: response.token
+            )
+        ))
+    }
     
-    lazy var deauthorize =
-        Action<Void, Void, Error> { [input = self.pipe.input] in
-            Server.back
-                .request(
-                    type: .post,
-                    path: "/deauthorize",
-                    send: .void(),
-                    take: .void()
-                )
-                .map {
-                    input.send(value: .unauthorized)
-                }
-        }
-    
-    private let pipe =
-        Signal<Identity, Never>.pipe()
+    func deauthorize() async throws {
+        try await Server.back
+            .request(
+                type: .post,
+                path: "/deauthorize",
+                send: .void(),
+                take: .void()
+            )
+        
+        await self.set(identity: .unauthorized)
+    }
 }
 
 extension AppUser {
@@ -104,21 +101,51 @@ Backend representation would react to changes in `AppUser`'s `identity` property
 2. Construct a new ``Server/Server/Config-swift.struct`` containing appropriate parameters for conducting a future requests.
 
 ```swift
+import Foundation
+import Combine
+import Server
+
+
 extension Server {
-    static let backend =
-        Server(AppUser.shared.identity.map({ identity in
-            Config(
-                base: URL(string: "https://backend.example.com")!,
-                headers: {
-                    switch identity {
-                        case .unauthorized:
-                            return [:]
-                        case .authorized(let info):
-                            return ["Authorization": "Bearer \(info.token)"]
-                    }
-                }()
-            )
-        }))
+    static let back = Back()
+}
+
+final class Back: Server {
+    fileprivate init() {
+        super.init(with: Self.config(for: nil))
+        
+        AppUser.shared.$identity
+            .removeDuplicates()
+            .sink { identity in
+                Task {
+                    await self.set(Self.config(for: identity))
+                }
+            }
+            .store(in: &self.bag)
+    }
+    
+    @available(*, unavailable)
+    override init(with config: Server.Config) { fatalError() }
+    
+    private var bag: Set<AnyCancellable> = []
+}
+
+private extension Back {
+    private static func config(
+        for identity: AppUser.Identity?
+    ) -> Server.Config {
+        Config(
+            base: URL(string: "https://backend.example.com")!,
+            headers: {
+                switch identity {
+                    case .authorized(let info):
+                        return ["Authorization": "Bearer \(info.token)"]
+                    default:
+                        return [:]
+                }
+            }()
+        )
+    }
 }
 ```
 
@@ -141,30 +168,23 @@ extension AppUser.Identity {
 ```
 
 ```swift
-extension Server {
-    static let back = Back()
-}
-
-final class Back: Server {
-    fileprivate init() {
-        super.init(
-            AppUser.shared.identity
-                .map { identity in
-                    switch identity {
-                        case .unauthorized:
-                            return Config(
-                                base:    URL(string: "https://backend.example.com")!,
-                                decoder: Self.decoder()
-                            )
-                        case .authorized(let info): 
-                            return Config(
-                                base:    info.url,
-                                headers: ["Authorization": "Bearer \(info.token)"],
-                                decoder: Self.decoder()
-                            )
-                    }
-                }
-        )
+private extension Back {
+    private static func config(
+        for identity: AppUser.Identity?
+    ) -> Server.Config {
+        switch identity {
+            case .authorized(let info):
+                return Config(
+                    base:    info.url,
+                    headers: ["Authorization": "Bearer \(info.token)"],
+                    decoder: Self.decoder()
+                )
+            default:
+                return Config(
+                    base:    URL(string: "https://backend.example.com")!,
+                    decoder: Self.decoder()
+                )
+        }
     }
 }
 
@@ -191,56 +211,46 @@ private extension Back {
 Some backend APIs may provide methods that specific only for that particular service, like, for example, pagination. In that case ``Server/Server`` subclass can be used to incapsulate that functionality.
 
 ```swift
+import Foundation
+import Server
+
 extension Back {
     func circular<R: Decodable>(
         path:  String,
         query: [String: String] = [:],
         take:  R.Type,
         batch: Int = 1000
-    ) -> SignalProducer<[R], Error> {
-        SignalProducer { observer, lifetime in
-            // pager
-            let pager =
-                MutableProperty<Int>(0)
-            
-            // scheduler
-            let scheduler =
-                QueueScheduler(
-                    qos: .default,
-                    name: "server.back.circular"
+    ) async throws -> [R] {
+        // page index
+        var index: Int = 0
+        
+        // collected elements
+        var elements: [R] = []
+        
+        // loading cycle
+        while true {
+            let response =
+                try await self.request(
+                    type: .get,
+                    path: path,
+                    query: query.merging([
+                        "offset": String(format: "%d", index * batch),
+                        "limit":  String(format: "%d", batch),
+                    ], uniquingKeysWith: { $1 }),
+                    take: .json(Response<R>.self)
                 )
             
-            // loading cycle
-            pager.producer
-                .observe(on: scheduler)
-                .flatMap(.concat) { index in
-                    self.request(
-                        type: .get,
-                        path: path,
-                        query: query.merging([
-                            "offset": String(index * batch), 
-                            "limit":  String(batch),
-                        ], uniquingKeysWith: { $1 }),
-                        take: .json(Response<R>.self)
-                    )
-                }
-                .map { response in
-                    scheduler.schedule {
-                        // last page?
-                        if response.offset + response.records.count >= response.total {
-                            // last page
-                            observer.sendCompleted()
-                        } else {
-                            // next cycle
-                            pager.value += 1
-                        }
-                    }
-                    
-                    // send payload to subscribers
-                    return response.records
-                }
-                .take(during: lifetime)
-                .start(observer)
+            // add to previously collected
+            elements += response.records
+            
+            // last page?
+            if elements.count >= response.total {
+                // last page
+                return elements
+            } else {
+                // next cycle
+                index += 1
+            }
         }
     }
 }
@@ -252,37 +262,18 @@ private extension Back {
         let records: [R]
     }
 }
-
 ```
 
-This method returns `SignalProducer` that issues multiple values before termination, each value is an array representing one page of requested items.
+This method returns an array with all items from all pages.
 
 ```swift
-Server.back
-    .circular(
-        path: "/items",
-        take: Item.self
-    )
-
+let items = 
+    try await Server.back
+        .circular(
+            path: "/items",
+            take: Item.self
+        )
 ```
-
-To receive all items one by one:
-
-```swift
-Server.back
-    .circular(...)
-    .flatten()
-```
-
-To receive only one value with array of all items of all pages (may be memory-dangerous):
-
-```swift
-Server.back
-    .circular(...)
-    .flatten()
-    .collect()
-```
-
 
 ### Limited API
 
@@ -291,9 +282,7 @@ Server.back
 For example, image hosting service that vends only one method.
 
 ```swift
-import Foundation
-import UIKit
-import ReactiveSwift
+import SwiftUI
 import Server
 
 extension Server {
@@ -302,22 +291,30 @@ extension Server {
 
 final class Pravatar: Server {
     fileprivate init() {
-        super.init(
-            Property(
-                value: Config(
-                    base: URL(string: "https://i.pravatar.cc")!
-                )
-            )
+        super.init(with: Config(
+            base: URL(string: "https://i.pravatar.cc")!)
         )
     }
     
     @available(*, unavailable)
-    override func raw(with request: URLRequest) -> SignalProducer<(Data, URLResponse), Error> {
+    override func raw(
+        with request: URLRequest
+    ) async throws -> (Data, URLResponse) {
         fatalError()
     }
     
     @available(*, unavailable)
-    override func request<R>(type: Server.Method, base: URL?, path: String, timeout: TimeInterval?, headers: [String : String], query: [String : String], send: Server.Send, take: Server.Take<R>, catch: Server.Config.Catcher?) -> SignalProducer<R, Error> {
+    override func request<R>(
+        type: Server.Method, 
+        base: URL?, 
+        path: String, 
+        timeout: TimeInterval?, 
+        headers: [String: String], 
+        query: [String: String], 
+        send: Server.Send, 
+        take: Server.Take<R>, 
+        catch: Server.Catcher<R>?
+    ) async throws -> R {
         fatalError()
     }
 }
@@ -328,64 +325,53 @@ enum PravatarError: Error {
 
 extension Pravatar {
     func load(
-        id:   Int, 
+        id:   Int,
         size: Int
-    ) -> SignalProducer<(UIImage, String?), Error> {
-        super.request(
-            type: .get,
-            path: "/\(String(format: "%d", size))",
-            query: ["img": String(format: "%d", id)],
-            take: .response(with: .data())
-        )
-        .attemptMap { response, data in
-            if let image = UIImage(data: data) {
-                return (image, (response as? HTTPURLResponse)?.suggestedFilename)
-            } else {
-                throw PravatarError.invalidData
-            }
-        }
-        .observe(on: QueueScheduler.main)
-    }
-}
-```
-
-## Error handling
-
-Error handling can be seamlessly paired with your application-wide notification system.
-
-```swift
-import Foundation
-import ReactiveSwift
-
-extension SignalProducer where Error: Swift.Error {
-    public func reportError(
-        title: String,
-        text:  @escaping (Error) -> String = { $0.localizedDescription }
-    ) -> SignalProducer<Value, Never> {
-        return self.flatMapError { error in
-            /* pass texts to your application-wide notification system
-            Toast.show(
-                error: title,
-                text:  text(error)
+    ) async throws -> (Image, String?) {
+        let (response, data) =
+            try await super.request(
+                type: .get,
+                path: "/\(String(format: "%d", size))",
+                query: ["img": String(format: "%d", id)],
+                take: .response(with: .data())
             )
-            */
-            return .empty
+        
+        if let image = self.image(from: data) {
+            return (
+                image, 
+                (response as? HTTPURLResponse)?.suggestedFilename
+            )
+        } else {
+            throw PravatarError.invalidData
         }
     }
 }
-```
 
-With this simple extension making requests becomes as clean as:
+#if os(iOS)
+import UIKit
 
-```swift
-Server.back
-    .request(
-        type: .get,
-        path: "/items",
-        take: .json([Item].self)
-    )
-    .reportError(title: "Can't get items")
-    .startWithValues { items in
-        // process items
+private extension Pravatar {
+    func image(from data: Data) -> Image? {
+        if let uiImage = UIImage(data: data) {
+            return Image(uiImage: uiImage)
+        } else {
+            return nil
+        }
     }
+}
+#endif
+    
+#if os(macOS)
+import AppKit
+
+private extension Pravatar {
+    func image(from data: Data) -> Image? {
+        if let nsImage = NSImage(data: data) {
+            return Image(nsImage: nsImage)
+        } else {
+            return nil
+        }
+    }
+}
+#endif
 ```

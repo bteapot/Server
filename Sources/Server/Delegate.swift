@@ -1,6 +1,6 @@
 //
 //  Delegate.swift
-//
+//  Server
 //
 //  Created by Денис Либит on 11.02.2022.
 //

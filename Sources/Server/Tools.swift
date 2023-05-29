@@ -1,19 +1,21 @@
 //
 //  Tools.swift
-//
+//  Server
 //
 //  Created by Денис Либит on 11.02.2022.
 //
 
 import Foundation
-import ReactiveSwift
 
 
 extension Server {
+    
+    /// Methods for creation of requests, processing of responses and handling of errors.
     public struct Tools {
         
         // MARK: Prepare request
         
+        /// Construct an `URLRequest` from provided parameters.
         public static func assemble<R>(
             config:  Config,
             type:    Method,
@@ -24,190 +26,178 @@ extension Server {
             query:   [String: String],
             send:    Send,
             take:    Take<R>
-        ) -> SignalProducer<URLRequest, Error> {
-            SignalProducer { observer, lifetime in
-                // base url
-                let baseURL = base ?? config.base
+        ) async throws -> URLRequest {
+            // base url
+            let baseURL = base ?? config.base
+            
+            // target url
+            let targetURL: URL = {
+                // path is empty?
+                if path.isEmpty {
+                    // unusual, but ok
+                    return baseURL
+                }
                 
-                // target url
-                let targetURL: URL = {
-                    // path is empty?
-                    if path.isEmpty {
-                        // unusual, but ok
-                        return baseURL
-                    }
+                // base url's path is empty or is root, and request path starts from slash?
+                if ["", "/"].contains(baseURL.path), path.first == "/" {
+                    // replace path in target url
+                    var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+                    components?.path = path
                     
-                    // base url's path is empty or is root, and request path starts from slash?
-                    if ["", "/"].contains(baseURL.path), path.first == "/" {
-                        // replace path in target url
-                        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
-                        components?.path = path
-                        
-                        if let url = components?.url {
-                            return url
-                        }
+                    if let url = components?.url {
+                        return url
                     }
-                    
-                    // append path to base url
-                    return baseURL.appendingPathComponent(path)
-                }()
-                
-                // add query items
-                guard var components = URLComponents(url: targetURL, resolvingAgainstBaseURL: false) else {
-                    #if DEBUG
-                    NSLog("server error extending URL with \(path)")
-                    #endif
-                    observer.send(error: Server.Errors.BadURL(
-                        components: {
-                            var components = URLComponents()
-                            components.path = path
-                            return components
-                        }()
-                    ))
-                    return
                 }
                 
-                components.queryItems =
-                    config.query
-                        .merging(query, uniquingKeysWith: { $1 })
-                        .map(URLQueryItem.init)
-                        .nilIfEmpty
+                // append path to base url
+                return baseURL.appendingPathComponent(path)
+            }()
+            
+            // add query items
+            guard var components = URLComponents(url: targetURL, resolvingAgainstBaseURL: false) else {
+                #if DEBUG
+                NSLog("server error extending URL with \(path)")
+                #endif
                 
-                // compose final url
-                guard let url = components.url else {
-                    #if DEBUG
-                    NSLog("server error assembling URL \(components)")
-                    #endif
-                    observer.send(error: Server.Errors.BadURL(components: components))
-                    return
-                }
-                
-                // encode body
-                let encoded: (body: Data?, headers: [String : String]?)
-                
-                do {
-                    encoded = try send.encode(config)
-                } catch {
-                    #if DEBUG
-                    NSLog("server error: \(error) encoding payload: \(send)")
-                    #endif
-                    observer.send(error: error)
-                    return
-                }
-                
-                // prepare headers: config + request + encoded + accepted
-                let headers: [String: String]? =
-                    config.headers
-                        .mapValues(Optional.init)
-                        .merging(headers) { $1 }
-                        .merging(encoded.headers) { $1 }
-                        .merging(["Accept": take.mimeType]) { $1 }
-                        .compactMapValues({ $0 })
-                        .nilIfEmpty
-                
-                // assemble request
-                var request = URLRequest(url: url)
-                
-                request.cachePolicy         = .reloadIgnoringLocalAndRemoteCacheData
-                request.timeoutInterval     = timeout ?? config.timeout
-                request.httpMethod          = type.rawValue
-                request.allHTTPHeaderFields = headers
-                request.httpBody            = encoded.body
-                
-                // request configuration
-                config.request?(&request)
-                
-                // return
-                observer.send(value: request)
-                observer.sendCompleted()
+                throw Server.Errors.BadURL(
+                    components: {
+                        var components = URLComponents()
+                        components.path = path
+                        return components
+                    }()
+                )
             }
+            
+            components.queryItems =
+                config.query
+                    .merging(query, uniquingKeysWith: { $1 })
+                    .map(URLQueryItem.init)
+                    .nilIfEmpty
+            
+            // compose final url
+            guard let url = components.url else {
+                #if DEBUG
+                NSLog("server error assembling URL \(components)")
+                #endif
+                
+                throw Server.Errors.BadURL(components: components)
+            }
+            
+            // encode body
+            let encoded: (body: Data?, headers: [String : String]?)
+            
+            do {
+                encoded = try await send.encode(config)
+            } catch {
+                #if DEBUG
+                NSLog("server error: \(error) encoding payload: \(send)")
+                #endif
+                
+                throw error
+            }
+            
+            // prepare headers: config + request + encoded + accepted
+            let headers: [String: String]? =
+                config.headers
+                    .mapValues(Optional.init)
+                    .merging(headers) { $1 }
+                    .merging(encoded.headers) { $1 }
+                    .merging(["Accept": take.mimeType]) { $1 }
+                    .compactMapValues({ $0 })
+                    .nilIfEmpty
+            
+            // assemble request
+            var request = URLRequest(url: url)
+            
+            request.cachePolicy         = .reloadIgnoringLocalAndRemoteCacheData
+            request.timeoutInterval     = timeout ?? config.timeout
+            request.httpMethod          = type.rawValue
+            request.allHTTPHeaderFields = headers
+            request.httpBody            = encoded.body
+            
+            // request configuration
+            config.request?(&request)
+            
+            // return
+            return request
         }
         
         // MARK: - Check response
         
+        /// Check `URLResponse` for validity.
         public static func check<R>(
             config:   Config,
             take:     Take<R>,
             request:  URLRequest,
             response: URLResponse,
             data:     Data
-        ) -> SignalProducer<(URLRequest, URLResponse, Data), Error> {
-            SignalProducer { observer, lifetime in
-                do {
-                    // check is defined by config or overriden by expected response body type
-                    let check = take.check ?? config.response.check
-                    try check(config, request, response, data)
-                    
-                    // check passed, return data
-                    observer.send(value: (request, response, data))
-                    observer.sendCompleted()
-                } catch {
-                    // report error
-                    observer.send(error: error)
-                }
-            }
+        ) async throws {
+            // check is defined by config or overriden by expected response body type
+            let check = take.check ?? config.response.check
+            try await check(config, request, response, data)
         }
         
         // MARK: - Decode response data
         
+        /// Decode `URLResponse`.
         public static func decode<R>(
             config:   Config,
             take:     Take<R>,
             request:  URLRequest,
             response: URLResponse,
             data:     Data
-        ) -> SignalProducer<R, Error> {
-            SignalProducer { observer, lifetime in
-                do {
-                    let decoded = try take.decode(config, data, response)
-                    observer.send(value: decoded)
-                    observer.sendCompleted()
-                } catch {
-                    #if DEBUG
-                    Self.report(config: config, request: request, response: response, data: data, error: error)
-                    #endif
-                    observer.send(error: Server.Errors.DecodingError(
-                        request: request,
-                        response: response,
-                        data: data,
-                        error: error
-                    ))
-                }
+        ) async throws -> R {
+            do {
+                return try await take.decode(config, data, response)
+            } catch {
+                #if DEBUG
+                Self.report(config: config, request: request, response: response, data: data, error: error)
+                #endif
+                
+                throw Server.Errors.DecodingError(
+                    request: request,
+                    response: response,
+                    data: data,
+                    error: error
+                )
             }
         }
         
         // MARK: - Map or skip errors
         
-        public static func mapError<R>(
-            config:  Config,
-            catcher: Catcher<R>?,
-            error:   Error
-        ) -> SignalProducer<R, Error> {
+        /// Map error or cancel request.
+        public static func map<R>(
+            config: Config,
+            catch:  Catcher<R>?,
+            error:  Error
+        ) async throws -> R {
             // error handling defined by request?
-            if let catcher = catcher {
-                // map error or send value and terminate
-                return .init { try catcher(error) }
+            if let `catch` {
+                // return mapped value or throw an error
+                return try await `catch`(error)
             }
             
             // error mapping defined by config?
             if let catcher = config.catcher {
-                // map error or terminate signal
+                // error is handled?
                 if let mapped = catcher(error) {
-                    return .init(error: mapped)
+                    // throw mapped error
+                    throw mapped
                 } else {
-                    return .empty
+                    // ignore error
+                    throw CancellationError()
                 }
             }
             
             // standard error handling
             switch error {
                 case URLError.cancelled:
-                    // request cancelled, will complete without values or errors
-                    return .empty
-
+                    // request cancelled
+                    throw CancellationError()
+                    
                 default:
-                    // send original error
-                    return .init(error: error)
+                    // throw original error
+                    throw error
             }
         }
     }

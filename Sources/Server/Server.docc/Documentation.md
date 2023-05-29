@@ -1,6 +1,6 @@
 # ``Server``
 
-Lightweight ReactiveSwift dynamically configurable network layer.
+Asynchronous Swift dynamically configurable network layer.
 
 ## Overview
 
@@ -9,36 +9,31 @@ This small library provides solution for most modern Swift application's network
 Making a request would be as simple as:
 
 ```swift
-Server.back
+try await Server.back
     .request(
         type: .post,
         path: "/ping"
     )
-    .start()
 ```
 
 Or as complex as:
 
 ```swift
-Server.back
-    .request(
-        type: .post,
-        path: "/userinfo",
-        query: [
-            "id": userID,
-        ],
-        send: .multipart([
-            .png(avatarImage, name: "avatar", filename: "avatar.png"),
-            .text(firstName, name: "first_name"),
-            .text(lastName, name: "last_name"),
-        ]),
-        take: .json(UserCard.self)
-    )
-    .reportError(title: "Can't update user card")
-    .observe(on: QueueScheduler.main)
-    .startWithValues { userCard in
-        // process updated user card
-    }
+let userCard =
+    try await Server.back
+        .request(
+            type: .post,
+            path: "/userinfo",
+            query: [
+                "id": userID,
+            ],
+            send: .multipart([
+                .png(avatarImage, name: "avatar", filename: "avatar.png"),
+                .text(firstName, name: "first_name"),
+                .text(lastName, name: "last_name"),
+            ]),
+            take: .json(UserCard.self)
+        )
 ```
 
 ## Topics
@@ -56,14 +51,14 @@ Server.back
 ### Making requests
 
 - ``Server/Server/raw(with:)``
-- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``
+- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catch:)``
 - ``Server/Server/Send``
 - ``Server/Server/Take``
 
 ### Tools
 
 - ``Server/Server/Tools``
-- ``Server/Server/reachable``
+- ``Server/Server/Reachable``
 
 ### Errors
 

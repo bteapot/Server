@@ -1,6 +1,6 @@
 # Server
 
-Lightweight ReactiveSwift dynamically configurable network layer.
+Asynchronous Swift dynamically configurable network layer.
 
 ## Overview
 
@@ -20,26 +20,26 @@ Server.back
 Or as complex as:
 
 ```swift
-Server.back
-    .request(
-        type: .post,
-        path: "/userinfo",
-        query: [
-            "id": userID,
-        ],
-        send: .multipart([
-            .png(avatarImage, name: "avatar", filename: "avatar.png"),
-            .text(firstName, name: "first_name"),
-            .text(lastName, name: "last_name"),
-        ]),
-        take: .json(UserCard.self)
-    )
-    .reportError(title: "Can't update user card")
-    .observe(on: QueueScheduler.main)
-    .startWithValues { userCard in
-        // process updated user card
-    }
+let userCard =
+    try await Server.back
+        .request(
+            type: .post,
+            path: "/userinfo",
+            query: [
+                "id": userID,
+            ],
+            send: .multipart([
+                .png(avatarImage, name: "avatar", filename: "avatar.png"),
+                .text(firstName, name: "first_name"),
+                .text(lastName, name: "last_name"),
+            ]),
+            take: .json(UserCard.self)
+        )
 ```
+
+## ReactiveSwift version
+
+ReactiveSwift-flavored Server package is archived in the [reactiveswift](https://github.com/bteapot/Server/tree/reactiveswift) branch and can be referenced by version tags 1.0.x.
 
 ## Documentation
 

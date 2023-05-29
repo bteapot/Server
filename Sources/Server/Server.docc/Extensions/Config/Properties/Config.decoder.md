@@ -6,5 +6,5 @@ Configured `JSONDecoder` instance for parsing ``Server/Server/Take/json(_:)`` re
 
 ### Making requests
 
-- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``
+- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catch:)``
 - ``Server/Server/Take``
