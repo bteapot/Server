@@ -123,8 +123,12 @@ extension Server {
         #if DEBUG
         public let reports:   Reports
         #endif
+        
+        private let usage = Usage()
     }
 }
+
+// MARK: - Reports mode
 
 extension Server.Config {
     /// Reports mode.
@@ -141,7 +145,95 @@ extension Server.Config {
     }
 }
 
+// MARK: - Usage and invalidation
+
+extension Server.Config {
+    private actor Usage {
+        
+        // MARK: - Properties
+        
+        var invalidated: Bool = false
+        
+        var count: Int = 0 {
+            didSet {
+                if let continuation = self.continuation, self.count == 0 {
+                    continuation.resume()
+                }
+            }
+        }
+        
+        private var continuation: CheckedContinuation<Void, Never>?
+        
+        // MARK: - Methods
+        
+        func check() throws {
+            if self.invalidated == true {
+                throw CancellationError()
+            }
+        }
+        
+        func invalidate() throws {
+            try self.check()
+            self.invalidated = true
+        }
+        
+        func checkin() throws {
+            try self.check()
+            self.count += 1
+        }
+        
+        func checkout() {
+            self.count -= 1
+        }
+        
+        func empty() async {
+            if self.count == 0 {
+                return
+            }
+            
+            await withCheckedContinuation { self.continuation = $0 }
+        }
+    }
+}
+
+extension Server.Config {
+    func invalidate() {
+        Task {
+            // mark as invalidated, if not already
+            try await self.usage.invalidate()
+            
+            // cancel all current tasks
+            let tasks = await self.session.allTasks
+            
+            for task in tasks {
+                task.cancel()
+            }
+            
+            // await zero usage
+            await self.usage.empty()
+            
+            // invalidate session
+            self.session.invalidateAndCancel()
+        }
+    }
+    
+    func checkInvalidation() async throws {
+        try await self.usage.check()
+    }
+    
+    func checkin() async throws {
+        try await self.usage.checkin()
+    }
+    
+    func checkout() async {
+        await self.usage.checkout()
+    }
+}
+
 #if DEBUG
+
+// MARK: - Debug
+
 extension Server.Config.Reports {
     var logging: Bool {
         switch self {

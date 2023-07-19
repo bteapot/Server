@@ -171,6 +171,17 @@ extension Server {
             catch:  Catcher<R>?,
             error:  Error
         ) async throws -> R {
+            // standard error handling
+            switch error {
+                case URLError.cancelled:
+                    // request cancelled
+                    throw CancellationError()
+                    
+                default:
+                    // continue error handling
+                    break
+            }
+            
             // error handling defined by request?
             if let `catch` {
                 // return mapped value or throw an error
@@ -189,16 +200,8 @@ extension Server {
                 }
             }
             
-            // standard error handling
-            switch error {
-                case URLError.cancelled:
-                    // request cancelled
-                    throw CancellationError()
-                    
-                default:
-                    // throw original error
-                    throw error
-            }
+            // oook
+            throw error
         }
     }
 }

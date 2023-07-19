@@ -27,7 +27,7 @@ open class Server {
     private actor Container {
         var config: Config {
             didSet {
-                oldValue.session.invalidateAndCancel()
+                oldValue.invalidate()
             }
         }
         
@@ -99,14 +99,21 @@ open class Server {
         take:    Take<R>,
         catch:   Catcher<R>? = nil
     ) async throws -> R {
+        // get config
         let config = await self.config
+        
+        // usage
+        try await config.checkin()
+        
+        defer {
+            Task {
+                await config.checkout()
+            }
+        }
         
         let checkCancellation = {
             try Task.checkCancellation()
-            
-            if config.session.delegate == nil {
-                throw CancellationError()
-            }
+            try await config.checkInvalidation()
         }
         
         do {
@@ -124,18 +131,14 @@ open class Server {
                     take:    take
                 )
             
-            try checkCancellation()
-            
-            if config.session.delegate == nil {
-                throw CancellationError()
-            }
+            try await checkCancellation()
             
             // execute request
             let received: (data: Data, response: URLResponse) =
                 try await config.session
                     .data(for: request)
             
-            try checkCancellation()
+            try await checkCancellation()
             
             // check response
             try await Tools.check(
@@ -146,7 +149,7 @@ open class Server {
                 data:     received.data
             )
             
-            try checkCancellation()
+            try await checkCancellation()
             
             // decode response data
             let decoded: R =
@@ -158,7 +161,7 @@ open class Server {
                     data:     received.data
                 )
             
-            try checkCancellation()
+            try await checkCancellation()
             
             // return
             return decoded
@@ -171,7 +174,7 @@ open class Server {
                     error:  error
                 )
             
-            try checkCancellation()
+            try await checkCancellation()
             
             // return
             return mapped
