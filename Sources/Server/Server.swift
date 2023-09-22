@@ -72,7 +72,7 @@ open class Server {
     ///
     /// Overrides config's ``Config-swift.struct/catcher-swift.property`` when non-`nil`
     /// This closure can return substitute value as request's result, rethrow received error or throw replacement error.
-    public typealias Catcher<R> = (Error) async throws -> R
+    public typealias Catcher<R> = @Sendable (Error) async throws -> R
     
     /// Perfom network request.
     ///

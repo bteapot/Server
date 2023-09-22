@@ -6,7 +6,7 @@
 //
 
 extension Server {
-    public enum Method: String {
+    public enum Method: String, Sendable {
         case delete = "DELETE"
         case get    = "GET"
         case patch  = "PATCH"

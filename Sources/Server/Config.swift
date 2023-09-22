@@ -9,7 +9,7 @@ import Foundation
 
 
 extension Server {
-    public struct Config {
+    public struct Config: Sendable {
         
         // MARK: - Initialization
         
@@ -89,22 +89,22 @@ extension Server {
         
         // MARK: - Types
         
-        public typealias Configure<T> = (inout T) -> Void
+        public typealias Configure<T> = @Sendable (inout T) -> Void
         
         public enum ChallengeHandler {
             case standard
             case handle((URLSessionTask?, URLAuthenticationChallenge) -> (URLSession.AuthChallengeDisposition, URLCredential?))
         }
         
-        public enum ResponseHandler {
+        public enum ResponseHandler: Sendable {
             case standard(Describe? = nil)
             case handle(Check)
             
-            public typealias Describe = (Config, URLRequest, HTTPURLResponse, Data) -> String
-            public typealias Check    = (Config, URLRequest, URLResponse, Data) async throws -> Void
+            public typealias Describe = @Sendable (Config, URLRequest, HTTPURLResponse, Data) -> String
+            public typealias Check    = @Sendable (Config, URLRequest, URLResponse, Data) async throws -> Void
         }
         
-        public typealias Catcher = (Error) -> Error?
+        public typealias Catcher = @Sendable (Error) -> Error?
         
         // MARK: - Properties
         
@@ -137,7 +137,7 @@ extension Server.Config {
     /// - **`logs`**: Will be logged request events such as starting, finishing, errors and execution duration. Used only with `DEBUG` builds.
     /// - **`dumps`**: Same as `logs` plus decoding failures data dumps. Takes local file system folder `URL` for response data dumps on decoding failures. Used only with `DEBUG` builds. Specify something like `URL(fileURLWithPath: "/Users/<your username>/Downloads")`. Will also turn on request execution logs when present.
     /// - **`full`**: Same as `logs` plus `dumps`.
-    public enum Reports {
+    public enum Reports: Sendable {
         case none
         case logs
         case dumps(URL)

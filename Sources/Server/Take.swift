@@ -9,7 +9,7 @@ import Foundation
 
 
 extension Server {
-    public struct Take<Value> {
+    public struct Take<Value>: Sendable {
         
         // MARK: - Creating
         
@@ -84,7 +84,7 @@ extension Server {
         // MARK: - Types
         
         /// Closure that takes current ``Server/Server/Config-swift.struct``, received `Data` and `URLResponse`, and returns decoded data.
-        public typealias Decode<T> = (Config, Data, URLResponse) async throws -> T
+        public typealias Decode<T> = @Sendable (Config, Data, URLResponse) async throws -> T
         
         // MARK: - Properties
         

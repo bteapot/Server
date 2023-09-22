@@ -11,7 +11,7 @@ import Foundation
 // MARK: - Send
 
 extension Server {
-    public struct Send {
+    public struct Send: Sendable {
         
         // MARK: - Creating
         
@@ -150,7 +150,7 @@ extension Server {
         // MARK: - Types
         
         /// Closure that takes current ``Server/Server/Config-swift.struct`` and returns request's body and headers.
-        public typealias Encode = (Config) async throws -> (body: Data?, headers: [String: String]?)
+        public typealias Encode = @Sendable (Config) async throws -> (body: Data?, headers: [String: String]?)
         
         // MARK: - Properties
         
