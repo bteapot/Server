@@ -17,7 +17,7 @@ extension Server {
     ///     @Server.Reachable
     ///     private var isReachable: Bool
     @propertyWrapper
-    public struct Reachable: DynamicProperty {
+    public struct Reachable: DynamicProperty, @unchecked Sendable {
         
         public init() {
             _path = State(wrappedValue: self.monitor.currentPath)

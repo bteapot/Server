@@ -11,7 +11,7 @@ import Foundation
 /// An object that represents specific backend.
 ///
 /// `Server` class provides coordination between changes in its configuration and session- and request-level nuances of specific backend service.
-open class Server {
+open class Server: @unchecked Sendable {
     
     // MARK: - Initialization
     

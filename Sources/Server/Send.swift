@@ -43,7 +43,7 @@ extension Server {
         ///
         /// - Parameters:
         ///   - encodable: Value conforming to `Encodable` protocol.
-        public static func json<T: Encodable>(_ encodable: T) -> Send {
+        public static func json<T: Encodable & Sendable>(_ encodable: T) -> Send {
             .init { config in
                 (try config.encoder.encode(encodable), ["Content-Type": "application/json"])
             }
@@ -170,7 +170,7 @@ extension Server.Send {
     /// Part of the multipart form.
     ///
     /// This structure provides name and optional data, file name and mime type for encoding form's part.
-    public struct Part {
+    public struct Part: Sendable {
         let data: Data?
         let name: String
         let filename: String?
