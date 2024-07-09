@@ -313,7 +313,7 @@ final class Pravatar: Server {
         query: [String: String], 
         send: Server.Send, 
         take: Server.Take<R>, 
-        catch: Server.Catcher<R>?
+        catcher: Catcher.Type?
     ) async throws -> R {
         fatalError()
     }

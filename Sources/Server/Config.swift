@@ -25,7 +25,7 @@ extension Server {
         ///   - response: Response handling (see ``Server/Server/Tools/check(config:take:request:response:data:)``).
         ///   - encoder: Optional closure for `JSONEncoder` configuration.
         ///   - decoder: Optional closure for `JSONDecoder` configuration.
-        ///   - catcher: Optional closure for mapping or canceling errors.
+        ///   - catcher: Type for handling errors.
         ///   - reports: Reports mode. Defaults to `none`. Works only for `DEBUG` builds.
         public init(
             timeout:  TimeInterval = 60,
@@ -38,7 +38,7 @@ extension Server {
             response:  ResponseHandler = .standard(),
             encoder:   Configure<JSONEncoder>? = nil,
             decoder:   Configure<JSONDecoder>? = nil,
-            catcher:   Catcher? = nil,
+            catcher:   Catcher.Type = DefaultCatcher.self,
             reports:   Reports = .none
         ) {
             // common request parameters
@@ -91,7 +91,7 @@ extension Server {
         
         public typealias Configure<T> = @Sendable (inout T) -> Void
         
-        public enum ChallengeHandler {
+        public enum ChallengeHandler: @unchecked Sendable {
             case standard
             case handle((URLSessionTask?, URLAuthenticationChallenge) -> (URLSession.AuthChallengeDisposition, URLCredential?))
         }
@@ -104,8 +104,6 @@ extension Server {
             public typealias Check    = @Sendable (Config, URLRequest, URLResponse, Data) async throws -> Void
         }
         
-        public typealias Catcher = @Sendable (Error) -> Error?
-        
         // MARK: - Properties
         
         public let timeout:   TimeInterval
@@ -116,7 +114,7 @@ extension Server {
         public let response:  ResponseHandler
         public let encoder:   JSONEncoder
         public let decoder:   JSONDecoder
-        public let catcher:   Catcher?
+        public let catcher:   Catcher.Type
         
         public let session:   URLSession
         

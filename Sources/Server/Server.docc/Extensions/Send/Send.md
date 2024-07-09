@@ -4,7 +4,7 @@ Composition of request's payload.
 
 ## Overview
 
-This structure provides body's `Data` and appropriate headers for ``request(type:base:path:timeout:headers:query:send:take:catch:)``.
+This structure provides body's `Data` and appropriate headers for ``request(type:base:path:timeout:headers:query:send:take:catcher:)``.
 
 ## Topics
 

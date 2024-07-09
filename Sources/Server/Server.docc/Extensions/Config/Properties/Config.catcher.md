@@ -1,9 +1,9 @@
 # ``Server/Server/Config-swift.struct/catcher-swift.property``
 
-Optional closure for mapping or canceling errors.
+Type that provides handler for request error.
 
 ## Overview
 
-Closure that takes error produced by request. Can return the same error, other error or `nil`. Returning `nil` will cancel request.
+Can throw the same error, other error, `CancellationError`, or retry request. Default value just throws incoming error.
 
-This parameter can be overriden by any ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catch:)``.
+This parameter can be overriden by any ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``.

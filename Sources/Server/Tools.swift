@@ -167,9 +167,17 @@ extension Server {
         
         /// Map error or cancel request.
         public static func map<R>(
-            config: Config,
-            catch:  Catcher<R>?,
-            error:  Error
+            config:  Config,
+            type:    Method,
+            base:    URL?,
+            path:    String,
+            timeout: TimeInterval?,
+            headers: [String: String],
+            query:   [String: String],
+            send:    Server.Send,
+            take:    Server.Take<R>,
+            catcher: Catcher.Type?,
+            error:   Error
         ) async throws -> R {
             // standard error handling
             switch error {
@@ -178,30 +186,21 @@ extension Server {
                     throw CancellationError()
                     
                 default:
-                    // continue error handling
-                    break
+                    // error handling defined by request or config
+                    let catcher = catcher ?? config.catcher
+                    
+                    return try await catcher.catch(
+                        type:    type,
+                        base:    base,
+                        path:    path,
+                        timeout: timeout,
+                        headers: headers,
+                        query:   query,
+                        send:    send,
+                        take:    take,
+                        error:   error
+                    )
             }
-            
-            // error handling defined by request?
-            if let `catch` {
-                // return mapped value or throw an error
-                return try await `catch`(error)
-            }
-            
-            // error mapping defined by config?
-            if let catcher = config.catcher {
-                // error is handled?
-                if let mapped = catcher(error) {
-                    // throw mapped error
-                    throw mapped
-                } else {
-                    // ignore error
-                    throw CancellationError()
-                }
-            }
-            
-            // oook
-            throw error
         }
     }
 }

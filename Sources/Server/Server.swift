@@ -68,12 +68,6 @@ open class Server: @unchecked Sendable {
             .data(for: request)
     }
     
-    /// Request-level error mapping.
-    ///
-    /// Overrides config's ``Config-swift.struct/catcher-swift.property`` when non-`nil`
-    /// This closure can return substitute value as request's result, rethrow received error or throw replacement error.
-    public typealias Catcher<R> = @Sendable (Error) async throws -> R
-    
     /// Perfom network request.
     ///
     /// - Parameters:
@@ -85,7 +79,7 @@ open class Server: @unchecked Sendable {
     ///   - query:   Request query. Defaults to empty.
     ///   - send:    Request's outgoing data handler. Defaults to ``Send/void()``.
     ///   - take:    Expected response data handler.
-    ///   - catch:   Overrides config's ``Config-swift.struct/catcher-swift.property`` when non-`nil`.
+    ///   - catcher: Overrides config's ``Config-swift.struct/catcher-swift.property`` when non-`nil`.
     ///
     /// - Returns: Value defined by specified ``Server/Server/Take`` handler.
     open func request<R>(
@@ -97,7 +91,7 @@ open class Server: @unchecked Sendable {
         query:   [String: String] = [:],
         send:    Send = .void(),
         take:    Take<R>,
-        catch:   Catcher<R>? = nil
+        catcher: Catcher.Type? = nil
     ) async throws -> R {
         // get config
         let config = await self.config
@@ -166,12 +160,20 @@ open class Server: @unchecked Sendable {
             // return
             return decoded
         } catch {
-            // try to map error
+            // try to handle error
             let mapped: R =
                 try await Tools.map(
-                    config: config,
-                    catch:  `catch`,
-                    error:  error
+                    config:  config,
+                    type:    type,
+                    base:    base,
+                    path:    path,
+                    timeout: timeout,
+                    headers: headers,
+                    query:   query,
+                    send:    send,
+                    take:    take,
+                    catcher: catcher,
+                    error:   error
                 )
             
             try await checkCancellation()

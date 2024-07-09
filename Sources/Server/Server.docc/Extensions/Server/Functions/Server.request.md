@@ -1,4 +1,4 @@
-# ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catch:)``
+# ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``
 
 ## Overview
 
@@ -83,4 +83,4 @@ Will throw ``Errors/DecodingError`` on decoding failure.
 
 ### Error handling
 
-Any encountered errors will be handled by the closure specified by the `catch` parameter or by config's ``Config-swift.struct/catcher-swift.property``. If none of the above specified, errors will be passed as is.
+Any encountered errors will be handled by the type specified by the `catcher` parameter or by config's ``Config-swift.struct/catcher-swift.property``.
