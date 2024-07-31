@@ -10,6 +10,7 @@ import Foundation
 
 public protocol Catcher {
     static func `catch`<R>(
+        config:  Server.Config,
         type:    Server.Method,
         base:    URL?,
         path:    String,
@@ -26,6 +27,7 @@ extension Server.Config {
     /// Default error handling, just throws provided error.
     public enum DefaultCatcher: Catcher {
         public static func `catch`<R>(
+            config:  Server.Config,
             type:    Server.Method,
             base:    URL?,
             path:    String,

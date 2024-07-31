@@ -190,6 +190,7 @@ extension Server {
                     let catcher = catcher ?? config.catcher
                     
                     return try await catcher.catch(
+                        config:  config,
                         type:    type,
                         base:    base,
                         path:    path,
