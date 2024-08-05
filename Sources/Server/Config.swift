@@ -15,6 +15,7 @@ extension Server {
         
         /// Creates a `Server`'s configuration with specified parameters.
         /// - Parameters:
+        ///   - break: Command invalidation of all ongoing requests, defaults to `true`.
         ///   - timeout: Default [timeoutInterval](https://developer.apple.com/documentation/foundation/urlrequest/2011509-timeoutinterval) value for all requests.
         ///   - base: Default base `URL` for all requests.
         ///   - headers: Base key-value pairs for [allHTTPHeaderFields](https://developer.apple.com/documentation/foundation/urlrequest/2011502-allhttpheaderfields) of all requests.
@@ -28,7 +29,8 @@ extension Server {
         ///   - catcher: Type for handling errors.
         ///   - reports: Reports mode. Defaults to `none`. Works only for `DEBUG` builds.
         public init(
-            timeout:  TimeInterval = 60,
+            break:     Bool = true,
+            timeout:   TimeInterval = 60,
             base:      URL,
             headers:   [String: String] = [:],
             query:     [String: String] = [:],
@@ -41,6 +43,9 @@ extension Server {
             catcher:   Catcher.Type = DefaultCatcher.self,
             reports:   Reports = .none
         ) {
+            // invalidation trigger
+            self.break = `break`
+            
             // common request parameters
             self.timeout = timeout
             self.base    = base
@@ -106,20 +111,21 @@ extension Server {
         
         // MARK: - Properties
         
-        public let timeout:   TimeInterval
-        public let base:      URL
-        public let headers:   [String: String]
-        public let query:     [String: String]
-        public let request:   Configure<URLRequest>?
-        public let response:  ResponseHandler
-        public let encoder:   JSONEncoder
-        public let decoder:   JSONDecoder
-        public let catcher:   Catcher.Type
+        public let `break`:  Bool
+        public let timeout:  TimeInterval
+        public let base:     URL
+        public let headers:  [String: String]
+        public let query:    [String: String]
+        public let request:  Configure<URLRequest>?
+        public let response: ResponseHandler
+        public let encoder:  JSONEncoder
+        public let decoder:  JSONDecoder
+        public let catcher:  Catcher.Type
         
-        public let session:   URLSession
+        public let session:  URLSession
         
         #if DEBUG
-        public let reports:   Reports
+        public let reports:  Reports
         #endif
         
         private let usage = Usage()

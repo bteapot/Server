@@ -27,7 +27,9 @@ open class Server: @unchecked Sendable {
     private actor Container {
         var config: Config {
             didSet {
-                oldValue.invalidate()
+                if self.config.break {
+                    oldValue.invalidate()
+                }
             }
         }
         
