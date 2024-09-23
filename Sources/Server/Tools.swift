@@ -68,8 +68,10 @@ extension Server {
                 )
             }
             
+            let configQuery = try await config.query()
+            
             components.queryItems =
-                config.query
+                configQuery
                     .merging(query, uniquingKeysWith: { $1 })
                     .map(URLQueryItem.init)
                     .nilIfEmpty
@@ -97,8 +99,10 @@ extension Server {
             }
             
             // prepare headers: config + request + encoded + accepted
+            let configHeaders = try await config.headers()
+            
             let headers: [String: String]? =
-                config.headers
+                configHeaders
                     .mapValues(Optional.init)
                     .merging(headers) { $1 }
                     .merging(encoded.headers) { $1 }

@@ -32,8 +32,8 @@ extension Server {
             break:     Bool = true,
             timeout:   TimeInterval = 60,
             base:      URL,
-            headers:   [String: String] = [:],
-            query:     [String: String] = [:],
+            headers:   @escaping @Sendable () async throws -> [String: String] = { [:] },
+            query:     @escaping @Sendable () async throws -> [String: String] = { [:] },
             config:    URLSessionConfiguration = .ephemeral,
             challenge: ChallengeHandler = .standard,
             request:   Configure<URLRequest>? = nil,
@@ -114,8 +114,8 @@ extension Server {
         public let `break`:  Bool
         public let timeout:  TimeInterval
         public let base:     URL
-        public let headers:  [String: String]
-        public let query:    [String: String]
+        public let headers:  @Sendable () async throws -> [String: String]
+        public let query:    @Sendable () async throws -> [String: String]
         public let request:  Configure<URLRequest>?
         public let response: ResponseHandler
         public let encoder:  JSONEncoder
