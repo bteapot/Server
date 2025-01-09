@@ -340,7 +340,7 @@ private extension Server.Tools {
         if let folder = config.reports.url {
             var filename = String(Date().timeIntervalSince1970)
             
-            if let urlString = request.url?.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) {
+            if let urlString = request.url?.absoluteString.components(separatedBy: .alphanumerics.inverted).joined(separator: "-") {
                 filename += "-" + urlString
             }
             
