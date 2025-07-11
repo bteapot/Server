@@ -21,6 +21,7 @@ extension Server {
             type:    Method,
             base:    URL?,
             path:    String,
+            cache:   URLRequest.CachePolicy,
             timeout: TimeInterval?,
             headers: [String: String],
             query:   [String: String],
@@ -113,7 +114,7 @@ extension Server {
             // assemble request
             var request = URLRequest(url: url)
             
-            request.cachePolicy         = .reloadIgnoringLocalAndRemoteCacheData
+            request.cachePolicy         = cache
             request.timeoutInterval     = timeout ?? config.timeout
             request.httpMethod          = type.rawValue
             request.allHTTPHeaderFields = headers
