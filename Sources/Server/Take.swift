@@ -81,10 +81,53 @@ extension Server {
             )
         }
         
+        /// Check `HTTPURLResponse` for specific codes and map response on match.
+        ///
+        /// Sets return value type to `Optional` of the specified type. When `HTTPURLResponse`'s code matches one of the specified codes, calls provided `mapper` closure.  Uses `"Accept"` header value and decoding method from specified ``Server/Server/Take``.
+        /// - Parameters:
+        ///   - codes: `Set` of `HTTPURLResponse` codes to be checked to use `mapper` handling.
+        ///   - mapper: One of the ``Mapper`` cases, handles responses with matching codes.
+        ///   - take: Other ``Server/Server/Take`` type, will handle other successfull responses.
+        public static func map<T>(codes: Set<Int>, mapper: Mapper<T> = .nullify, with take: Take<T>) -> Take<T?> {
+            .init(
+                mimeType: take.mimeType,
+                check: { config, request, response, data in
+                    if  let response = response as? HTTPURLResponse,
+                        codes.contains(response.statusCode)
+                    {
+                        return
+                    } else {
+                        try await config.response.check(config, request, response, data)
+                    }
+                },
+                decode: { config, data, response in
+                    if  let response = response as? HTTPURLResponse,
+                        codes.contains(response.statusCode)
+                    {
+                        switch mapper {
+                            case .nullify:         return nil
+                            case .map(let mapper): return try await mapper(config, data, response)
+                        }
+                    } else {
+                        return try await take.decode(config, data, response)
+                    }
+                }
+            )
+        }
+        
         // MARK: - Types
         
         /// Closure that takes current ``Server/Server/Config-swift.struct``, received `Data` and `URLResponse`, and returns decoded data.
         public typealias Decode<T> = @Sendable (Config, Data, URLResponse) async throws -> T
+        
+        /// Handling of matching codes for ``map(codes:mapper:with:)``.
+        public enum Mapper<T>: Sendable {
+            /// Will simply return `nil` on response code match.
+            case nullify
+            
+            /// Async closure that will be called on response code match. Takes ``Server/Server/Config-swift.struct``, `Data` and `HTTPURLResponse` as parameters. Can throw, return specified by ``Server/Server/Take`` value or `nil`.
+            case map(@Sendable (Config, Data, HTTPURLResponse) async throws -> T?)
+        }
         
         // MARK: - Properties
         

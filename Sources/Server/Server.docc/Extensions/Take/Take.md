@@ -29,3 +29,8 @@ When `URLResponse` with `Data` is received, they can be optionally checked by th
 ### Combined
 
 - ``response(with:)``
+
+### Mapping
+
+- ``map(codes:mapper:with:)``
+- ``Mapper``

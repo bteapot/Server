@@ -213,7 +213,7 @@ extension Server {
 
 // MARK: - Default response check
 
-private extension Server.Config.ResponseHandler {
+internal extension Server.Config.ResponseHandler {
     var check: Check {
         switch self {
             case .standard(let describe):
