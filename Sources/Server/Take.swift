@@ -88,7 +88,7 @@ extension Server {
         ///   - codes: `Set` of `HTTPURLResponse` codes to be checked to use `mapper` handling.
         ///   - mapper: One of the ``Mapper`` cases, handles responses with matching codes.
         ///   - take: Other ``Server/Server/Take`` type, will handle other successfull responses.
-        public static func map<T>(codes: Set<Int>, mapper: Mapper<T> = .nullify, with take: Take<T>) -> Take<T?> {
+        public static func map<T>(codes: Set<Int>, to mapper: Mapper<T> = .nullify, with take: Take<T>) -> Take<T?> {
             .init(
                 mimeType: take.mimeType,
                 check: { config, request, response, data in
@@ -105,8 +105,9 @@ extension Server {
                         codes.contains(response.statusCode)
                     {
                         switch mapper {
-                            case .nullify:         return nil
-                            case .map(let mapper): return try await mapper(config, data, response)
+                            case .nullify:          return nil
+                            case .map(let mapper):  return try await mapper(config, data, response)
+                            case .value(let value): return value
                         }
                     } else {
                         return try await take.decode(config, data, response)
@@ -120,13 +121,16 @@ extension Server {
         /// Closure that takes current ``Server/Server/Config-swift.struct``, received `Data` and `URLResponse`, and returns decoded data.
         public typealias Decode<T> = @Sendable (Config, Data, URLResponse) async throws -> T
         
-        /// Handling of matching codes for ``map(codes:mapper:with:)``.
-        public enum Mapper<T>: Sendable {
+        /// Handling of matching codes for ``map(codes:to:with:)``.
+        public enum Mapper<T: Sendable>: Sendable {
             /// Will simply return `nil` on response code match.
             case nullify
             
             /// Async closure that will be called on response code match. Takes ``Server/Server/Config-swift.struct``, `Data` and `HTTPURLResponse` as parameters. Can throw, return specified by ``Server/Server/Take`` value or `nil`.
             case map(@Sendable (Config, Data, HTTPURLResponse) async throws -> T?)
+            
+            /// WIll return provided value on response code match.
+            case value(T)
         }
         
         // MARK: - Properties

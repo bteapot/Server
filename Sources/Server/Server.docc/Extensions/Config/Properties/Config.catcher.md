@@ -6,4 +6,4 @@ Type that provides handler for request error.
 
 Can throw the same error, other error, `CancellationError`, or retry request. Default value just throws incoming error.
 
-This parameter can be overriden by any ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``.
+This parameter can be overriden by any ``Server/Server/request(type:base:path:cache:timeout:headers:query:send:take:catcher:)``.

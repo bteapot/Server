@@ -32,7 +32,7 @@ More common usage scenarios takes into account application user's identity chang
 
 ## Making requests
 
-Call ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)`` to asynchronously:
+Call ``Server/Server/request(type:base:path:cache:timeout:headers:query:send:take:catcher:)`` to asynchronously:
 
 1. Assemble an `URLRequest` from current configuration and specified method parameters.
 2. Start that request with underlying `URLSession`.
@@ -64,7 +64,7 @@ let item: Item =
 
 ### Requests
 
-- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``
+- ``Server/Server/request(type:base:path:cache:timeout:headers:query:send:take:catcher:)``
 - ``Method``
 - ``Send``
 - ``Take``

@@ -4,4 +4,4 @@
 
 ## Overview
 
-`URLComponents` derived from current ``Server/Server/Config-swift.struct`` and ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)`` parameters. 
+`URLComponents` derived from current ``Server/Server/Config-swift.struct`` and ``Server/Server/request(type:base:path:cache:timeout:headers:query:send:take:catcher:)`` parameters. 

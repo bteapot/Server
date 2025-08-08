@@ -76,6 +76,7 @@ open class Server: @unchecked Sendable {
     ///   - type:    HTTP RESTful method.
     ///   - base:    Override config's ``Config-swift.struct/base`` URL when non-`nil`.
     ///   - path:    Request path.
+    ///   - cache:   Request cache policy, defaults to `.useProtocolCachePolicy`.
     ///   - timeout: Override config's ``Config-swift.struct/timeout`` value when non-`nil`.
     ///   - headers: Request headers. Defaults to empty.
     ///   - query:   Request query. Defaults to empty.

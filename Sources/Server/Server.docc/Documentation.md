@@ -51,7 +51,7 @@ let userCard =
 ### Making requests
 
 - ``Server/Server/raw(with:)``
-- ``Server/Server/request(type:base:path:timeout:headers:query:send:take:catcher:)``
+- ``Server/Server/request(type:base:path:cache:timeout:headers:query:send:take:catcher:)``
 - ``Server/Server/Send``
 - ``Server/Server/Take``
 
