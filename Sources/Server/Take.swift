@@ -42,7 +42,7 @@ extension Server {
         ///
         /// - Parameters:
         ///   - type: Expected `Decodable` type.
-        public static func json<T: Decodable>(_ type: T.Type) -> Take<T> {
+        public static func json<T: Decodable & SendableMetatype>(_ type: T.Type) -> Take<T> {
             .init(
                 mimeType: "application/json",
                 decode: { config, data, response in try config.decoder.decode(T.self, from: data) }

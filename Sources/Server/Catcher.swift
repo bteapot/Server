@@ -8,7 +8,7 @@
 import Foundation
 
 
-public protocol Catcher {
+public protocol Catcher: Sendable {
     static func `catch`<R>(
         config:  Server.Config,
         type:    Server.Method,

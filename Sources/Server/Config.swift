@@ -22,6 +22,7 @@ extension Server {
         ///   - query: Base key-value pairs for [queryItems](https://developer.apple.com/documentation/foundation/urlcomponents/1779966-queryitems) of all requests.
         ///   - config: `URLSessionConfiguration` for new session.
         ///   - challenge: Handling of `URLSessionDelegate`'s authentication challenges (see [here](https://developer.apple.com/documentation/foundation/urlsessiondelegate/1409308-urlsession)).
+        ///   - redirect: Handling of `URLSessionDelegate`'s task redirects (see [here](https://developer.apple.com/documentation/foundation/urlsessiontaskdelegate/urlsession(_:task:willperformhttpredirection:newrequest:completionhandler:))).
         ///   - request: Optional closure for fine-tuning any `URLRequest`.
         ///   - response: Response handling (see ``Server/Server/Tools/check(config:take:request:response:data:)``).
         ///   - encoder: Optional closure for `JSONEncoder` configuration.
@@ -36,6 +37,7 @@ extension Server {
             query:     @escaping @Sendable () async throws -> [String: String] = { [:] },
             config:    URLSessionConfiguration = .ephemeral,
             challenge: ChallengeHandler = .standard,
+            redirect:  RedirectHandler = .standard,
             request:   Configure<URLRequest>? = nil,
             response:  ResponseHandler = .standard(),
             encoder:   Configure<JSONEncoder>? = nil,
@@ -79,7 +81,7 @@ extension Server {
             self.session = 
                 URLSession(
                     configuration: config,
-                    delegate:      Delegate(with: challenge),
+                    delegate:      Delegate(with: challenge, redirect),
                     delegateQueue: nil
                 )
             
@@ -98,7 +100,12 @@ extension Server {
         
         public enum ChallengeHandler: @unchecked Sendable {
             case standard
-            case handle((URLSessionTask?, URLAuthenticationChallenge) -> (URLSession.AuthChallengeDisposition, URLCredential?))
+            case handle((URLSessionTask?, URLAuthenticationChallenge, (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) -> Void)
+        }
+        
+        public enum RedirectHandler: @unchecked Sendable {
+            case standard
+            case handle((URLSessionTask, HTTPURLResponse, URLRequest, (URLRequest?) -> Void) -> Void)
         }
         
         public enum ResponseHandler: Sendable {
@@ -203,21 +210,23 @@ extension Server.Config {
 extension Server.Config {
     func invalidate() {
         Task {
-            // mark as invalidated, if not already
-            try await self.usage.invalidate()
-            
-            // cancel all current tasks
-            let tasks = await self.session.allTasks
-            
-            for task in tasks {
-                task.cancel()
-            }
-            
-            // await zero usage
-            await self.usage.empty()
-            
-            // invalidate session
-            self.session.invalidateAndCancel()
+            do {
+                // mark as invalidated, if not already
+                try await self.usage.invalidate()
+                
+                // cancel all current tasks
+                let tasks = await self.session.allTasks
+                
+                for task in tasks {
+                    task.cancel()
+                }
+                
+                // await zero usage
+                await self.usage.empty()
+                
+                // invalidate session
+                self.session.invalidateAndCancel()
+            } catch {}
         }
     }
     
